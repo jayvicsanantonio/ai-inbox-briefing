@@ -1,0 +1,30 @@
+{
+  "name": "ai-inbox-briefing",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "auth:google": "tsx scripts/google-auth.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.14.0",
+  "dependencies": {
+    "@ai-sdk/openai": "^2.0.77",
+    "@aws-sdk/client-dynamodb": "^3.946.0",
+    "@aws-sdk/client-s3": "^3.946.0",
+    "@aws-sdk/lib-dynamodb": "^3.946.0",
+    "@aws-sdk/s3-request-presigner": "^3.946.0",
+    "ai": "^5.0.107",
+    "googleapis": "^167.0.0",
+    "twilio": "^5.10.7",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "eslint": "^9.39.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

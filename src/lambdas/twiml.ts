@@ -55,7 +55,7 @@ export async function handler(event: ApiGwEvent) {
   const audioUrl = await presignMp3Url({
     bucket: AUDIO_BUCKET,
     key: rec.s3Key,
-    expiresSeconds: 60 * 10, // 10 minutes
+    expiresSeconds: 60 * 30, // 30 minutes
   });
 
   vr.say('Good morning. Here is your unread email summary.');

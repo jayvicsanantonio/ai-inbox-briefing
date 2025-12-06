@@ -44,6 +44,7 @@ export class AppStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: 'src/lambdas/twiml.ts',
       handler: 'handler',
+      memorySize: 512,
       environment: {
         AUDIO_BUCKET: bucket.bucketName,
         SUMMARY_TABLE: table.tableName,
@@ -54,7 +55,7 @@ export class AppStack extends cdk.Stack {
     // Add /twiml route
     httpApi.addRoutes({
       path: '/twiml',
-      methods: [apigwv2.HttpMethod.GET],
+      methods: [apigwv2.HttpMethod.GET, apigwv2.HttpMethod.POST],
       integration: new apigwv2i.HttpLambdaIntegration(
         'TwimlIntegration',
         twimlFn
@@ -67,6 +68,7 @@ export class AppStack extends cdk.Stack {
       entry: 'src/lambdas/daily.ts',
       handler: 'handler',
       timeout: cdk.Duration.minutes(2),
+      memorySize: 1024,
       environment: {
         AUDIO_BUCKET: bucket.bucketName,
         SUMMARY_TABLE: table.tableName,

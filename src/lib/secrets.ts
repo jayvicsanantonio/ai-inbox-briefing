@@ -33,9 +33,9 @@ export async function loadSecrets(
       twilioFromNumber: process.env.TWILIO_FROM_NUMBER!,
       callToNumber: process.env.CALL_TO_NUMBER!,
 
-      elevenLabsApiKey: process.env.ELEVEN_LABS_API_KEY!,
-      elevenLabsVoiceId: process.env.ELEVEN_LABS_VOICE_ID!,
-      elevenLabsModelId: process.env.ELEVEN_LABS_MODEL_ID!,
+      elevenLabsApiKey: process.env.ELEVENLABS_API_KEY!,
+      elevenLabsVoiceId: process.env.ELEVENLABS_VOICE_ID!,
+      elevenLabsModelId: process.env.ELEVENLABS_MODEL_ID!,
 
       googleGenerativeAIApiKey:
         process.env.GOOGLE_GENERATIVE_AI_API_KEY!,

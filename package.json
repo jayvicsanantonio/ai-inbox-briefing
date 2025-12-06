@@ -4,6 +4,8 @@
   "description": "",
   "type": "module",
   "scripts": {
+    "dev:daily": "tsx --env-file=.env src/local/run-daily.ts",
+    "dev:twiml": "tsx --env-file=.env src/local/run-twiml.ts",
     "auth:google": "tsx --env-file=.env scripts/google-auth.ts"
   },
   "keywords": [],
@@ -17,6 +19,7 @@
     "@aws-sdk/lib-dynamodb": "^3.946.0",
     "@aws-sdk/s3-request-presigner": "^3.946.0",
     "ai": "^5.0.107",
+    "elevenlabs": "^1.59.0",
     "express": "^5.2.1",
     "googleapis": "^167.0.0",
     "twilio": "^5.10.7",

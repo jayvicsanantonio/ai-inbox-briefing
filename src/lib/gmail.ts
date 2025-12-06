@@ -38,9 +38,7 @@ export async function fetchUnreadEmails(params: {
   const list = await gmail.users.messages.list({
     userId: 'me',
     maxResults: params.maxResults ?? 15,
-    q:
-      params.q ??
-      'in:inbox is:unread -category:promotions -category:social',
+    q: params.q ?? 'is:unread newer_than:2d',
   });
 
   const ids = (list.data.messages ?? [])

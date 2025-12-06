@@ -4,7 +4,7 @@
   "description": "",
   "type": "module",
   "scripts": {
-    "auth:google": "tsx scripts/google-auth.ts"
+    "auth:google": "tsx --env-file=.env scripts/google-auth.ts"
   },
   "keywords": [],
   "author": "",
@@ -17,11 +17,13 @@
     "@aws-sdk/lib-dynamodb": "^3.946.0",
     "@aws-sdk/s3-request-presigner": "^3.946.0",
     "ai": "^5.0.107",
+    "express": "^5.2.1",
     "googleapis": "^167.0.0",
     "twilio": "^5.10.7",
     "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/node": "^24.10.1",
     "eslint": "^9.39.1",
     "tsx": "^4.21.0",

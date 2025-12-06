@@ -1,4 +1,4 @@
-import { ElevenLabsClient } from 'elevenlabs';
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 
 export async function elevenLabsTtsMp3(params: {
   apiKey: string;
@@ -12,14 +12,17 @@ export async function elevenLabsTtsMp3(params: {
     params.voiceId,
     {
       text: params.text,
-      model_id: params.modelId,
-      voice_settings: { stability: 0.4, similarity_boost: 0.8 },
+      modelId: params.modelId,
+      voiceSettings: { stability: 0.4, similarityBoost: 0.8 },
     }
   );
 
   const chunks: Uint8Array[] = [];
-  for await (const chunk of audioStream) {
-    chunks.push(chunk);
+  const reader = audioStream.getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
   }
 
   const totalLength = chunks.reduce(

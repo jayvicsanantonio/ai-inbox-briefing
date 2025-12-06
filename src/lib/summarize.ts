@@ -1,6 +1,6 @@
 import { generateObject } from 'ai';
 import { z } from 'zod';
-import { google } from '@ai-sdk/google';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import type { GmailMessage } from './gmail';
 
 export const SummarySchema = z.object({
@@ -50,8 +50,12 @@ export type CallSummary = z.infer<typeof SummarySchema>;
 
 export async function summarizeEmails(params: {
   emails: GmailMessage[];
-  openaiApiKey: string;
+  googleGenerativeAIApiKey: string;
 }): Promise<CallSummary> {
+  const google = createGoogleGenerativeAI({
+    apiKey: params.googleGenerativeAIApiKey,
+  });
+
   const prompt = `
 You are a concise executive assistant producing a spoken voicemail-style summary.
 

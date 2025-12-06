@@ -6,7 +6,12 @@
   "scripts": {
     "dev:daily": "tsx --env-file=.env src/local/run-daily.ts",
     "dev:twiml": "tsx --env-file=.env src/local/run-twiml.ts",
-    "auth:google": "tsx --env-file=.env scripts/google-auth.ts"
+    "auth:google": "tsx --env-file=.env scripts/google-auth.ts",
+    "create:ssm": "tsx scripts/create-ssm-param.ts",
+    "cdk": "cdk",
+    "cdk:synth": "cdk synth",
+    "cdk:deploy": "cdk deploy",
+    "cdk:diff": "cdk diff"
   },
   "keywords": [],
   "author": "",
@@ -29,6 +34,10 @@
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^24.10.1",
+    "aws-cdk": "^2.1033.0",
+    "aws-cdk-lib": "^2.232.1",
+    "constructs": "^10.4.3",
+    "esbuild": "^0.27.1",
     "eslint": "^9.39.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"

@@ -19,6 +19,16 @@ export async function putMp3(params: {
   key: string;
   bytes: Uint8Array;
 }): Promise<void> {
+  if (params.bucket === 'LOCAL_DUMMY') {
+    const fs = await import('fs');
+    const path = await import('path');
+    const outFile = path.join(process.cwd(), 'tmp', 'summary.mp3');
+    fs.mkdirSync(path.dirname(outFile), { recursive: true });
+    fs.writeFileSync(outFile, params.bytes);
+    console.log(`[Local] Wrote MP3 to ${outFile}`);
+    return;
+  }
+
   await s3.send(
     new PutObjectCommand({
       Bucket: params.bucket,

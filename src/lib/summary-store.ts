@@ -23,6 +23,14 @@ export async function putSummaryRecord(params: {
   tableName: string;
   record: SummaryRecord;
 }) {
+  if (params.tableName === 'LOCAL_DUMMY') {
+    console.log(
+      '[Local] Skipping DynamoDB write. Record:',
+      params.record
+    );
+    return;
+  }
+
   await ddb.send(
     new PutCommand({
       TableName: params.tableName,

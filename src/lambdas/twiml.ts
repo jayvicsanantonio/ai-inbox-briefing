@@ -28,7 +28,6 @@ function xmlResponse(xml: string, statusCode = 200) {
 export async function handler(event: ApiGwEvent) {
   const qs = event.queryStringParameters ?? {};
   const summaryId = qs.summaryId;
-  const token = qs.token;
 
   const secrets = await loadSecrets(SECRETS_PARAM);
 

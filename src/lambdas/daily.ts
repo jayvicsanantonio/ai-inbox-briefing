@@ -28,7 +28,7 @@ export async function handler() {
     clientSecret: secrets.gmailClientSecret,
     refreshToken: secrets.gmailRefreshToken,
     maxResults: 15,
-    q: 'in:inbox is:unread -category:promotions -category:social',
+    q: 'is:unread newer_than:2d',
   });
 
   const summary = await summarizeEmails({
@@ -40,6 +40,7 @@ export async function handler() {
     apiKey: secrets.elevenLabsApiKey,
     voiceId: secrets.elevenLabsVoiceId,
     text: summary.speakable,
+    modelId: secrets.elevenLabsModelId,
   });
 
   const summaryId = newSummaryId();
@@ -59,12 +60,9 @@ export async function handler() {
     },
   });
 
-  const guard = secrets.twimlGuardToken
-    ? `&token=${encodeURIComponent(secrets.twimlGuardToken)}`
-    : '';
   const twimlUrl = `${API_BASE_URL}twiml?summaryId=${encodeURIComponent(
     summaryId
-  )}${guard}`;
+  )}`;
 
   const call = await startCall({
     accountSid: secrets.twilioAccountSid,

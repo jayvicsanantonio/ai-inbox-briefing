@@ -24,8 +24,8 @@ This comprehensive documentation covers every aspect of how the AI Inbox Briefin
 The **AI Inbox Briefing Agent** is a serverless application that:
 
 1. **Triggers daily at 11:00 AM Pacific Time** via AWS EventBridge Scheduler
-2. **Fetches unread Gmail messages** using the Gmail API with OAuth 2.0
-3. **Summarizes emails using AI** via Google Gemini (gemini-2.0-flash)
+2. **Summarizes unread Gmail using AI** via Google Gemini (gemini-2.0-flash) and a tool call that fetches Gmail via OAuth 2.0
+3. **Converts summary to natural speech** using ElevenLabs TTS
 4. **Converts summary to natural speech** using ElevenLabs TTS
 5. **Uploads audio to S3** and stores metadata in DynamoDB
 6. **Places an outbound phone call** via Twilio that plays the audio summary
@@ -86,8 +86,7 @@ The **AI Inbox Briefing Agent** is a serverless application that:
 1. **EventBridge Scheduler** triggers `DailyFn` Lambda at 11:00 AM Pacific Time
 2. **DailyFn Lambda**:
    - Loads secrets from AWS SSM Parameter Store
-   - Fetches unread emails via Gmail API
-   - Generates structured summary via Google Gemini
+   - Uses Gemini tool-calling to fetch unread emails via Gmail API (OAuth) and generate structured summary
    - Converts summary to speech via ElevenLabs TTS
    - Uploads MP3 to S3
    - Stores metadata record in DynamoDB

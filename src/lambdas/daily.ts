@@ -1,4 +1,3 @@
-import { fetchUnreadEmails } from '../lib/gmail';
 import { summarizeEmails } from '../lib/summarize';
 import { elevenLabsTtsMp3 } from '../lib/tts-elevenlabs';
 import { newAudioKey, putMp3 } from '../lib/storage';
@@ -12,6 +11,9 @@ const SECRETS_PARAM = process.env.SECRETS_PARAM!;
 const API_BASE_URL = process.env.API_BASE_URL!;
 
 export async function handler() {
+  const started = Date.now();
+  console.log('[daily] handler start');
+
   if (
     !AUDIO_BUCKET ||
     !SUMMARY_TABLE ||
@@ -22,18 +24,15 @@ export async function handler() {
   }
 
   const secrets = await loadSecrets(SECRETS_PARAM);
-
-  const emails = await fetchUnreadEmails({
-    clientId: secrets.gmailClientId,
-    clientSecret: secrets.gmailClientSecret,
-    refreshToken: secrets.gmailRefreshToken,
-    maxResults: 15,
-    q: 'is:unread newer_than:2d',
-  });
+  console.log('[daily] secrets loaded');
 
   const summary = await summarizeEmails({
-    emails,
     googleGenerativeAIApiKey: secrets.googleGenerativeAIApiKey,
+    gmailClientId: secrets.gmailClientId,
+    gmailClientSecret: secrets.gmailClientSecret,
+    gmailRefreshToken: secrets.gmailRefreshToken,
+    maxResults: 15,
+    q: 'is:unread newer_than:2d',
   });
 
   const mp3 = await elevenLabsTtsMp3({
@@ -42,11 +41,15 @@ export async function handler() {
     text: summary.speakable,
     modelId: secrets.elevenLabsModelId,
   });
+  console.log('[daily] elevenLabs TTS complete', {
+    speakableChars: summary.speakable.length,
+  });
 
   const summaryId = newSummaryId();
   const key = newAudioKey();
 
   await putMp3({ bucket: AUDIO_BUCKET, key, bytes: mp3 });
+  console.log('[daily] mp3 uploaded', { key });
 
   const now = Math.floor(Date.now() / 1000);
   const ttlSeconds = 60 * 60 * 6;
@@ -59,6 +62,7 @@ export async function handler() {
       expiresAt: now + ttlSeconds,
     },
   });
+  console.log('[daily] summary record stored', { summaryId });
 
   const twimlUrl = `${API_BASE_URL}twiml?summaryId=${encodeURIComponent(
     summaryId
@@ -70,6 +74,14 @@ export async function handler() {
     to: secrets.callToNumber,
     from: secrets.twilioFromNumber,
     twimlUrl,
+  });
+  console.log('[daily] twilio call started', { callSid: call.sid });
+
+  const elapsedMs = Date.now() - started;
+  console.log('[daily] handler success', {
+    elapsedMs,
+    unreadCount: summary.unreadCount,
+    summaryId,
   });
 
   return {

@@ -58,7 +58,6 @@ export async function handler(event: ApiGwEvent) {
     expiresSeconds: 60 * 30, // 30 minutes
   });
 
-  vr.say('Good morning. Here is your unread email summary.');
   vr.play(audioUrl);
   vr.hangup();
 

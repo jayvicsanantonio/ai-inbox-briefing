@@ -11,7 +11,8 @@
     "cdk": "cdk",
     "cdk:synth": "cdk synth",
     "cdk:deploy": "cdk deploy",
-    "cdk:diff": "cdk diff"
+    "cdk:diff": "cdk diff",
+    "test": "aws lambda invoke --function-name AiInboxBriefingStack-DailyFn064080AD-IbYaCVg3Y5Gr --region us-west-1 /tmp/response.json && cat /tmp/response.json"
   },
   "keywords": [],
   "author": "",

@@ -1,4 +1,4 @@
-import { generateText, hasToolCall, tool } from 'ai';
+import { generateText, hasToolCall, tool, stepCountIs } from 'ai';
 import { z } from 'zod';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { fetchUnreadEmails, type GmailMessage } from './gmail';
@@ -48,6 +48,9 @@ export const SummarySchema = z.object({
 
 export type CallSummary = z.infer<typeof SummarySchema>;
 
+const MAX_ATTEMPTS = 2;
+const MAX_STEPS_PER_ATTEMPT = 5;
+
 export async function summarizeEmails(params: {
   googleGenerativeAIApiKey: string;
   gmailClientId: string;
@@ -60,12 +63,26 @@ export async function summarizeEmails(params: {
     apiKey: params.googleGenerativeAIApiKey,
   });
 
+  // Cache emails after first fetch to avoid redundant API calls on retry
+  let cachedEmails: GmailMessage[] | null = null;
+
   // Tool to fetch unread emails
   const getUnreadEmails = tool({
     description:
       'Fetch unread Gmail messages (From, Subject, Date, snippet) for the last 24 hours. Call this first to get the emails to summarize.',
     inputSchema: z.object({}),
     execute: async (): Promise<{ emails: GmailMessage[] }> => {
+      // Return cached emails if already fetched
+      if (cachedEmails !== null) {
+        console.log(
+          '[summarize] getUnreadEmails: returning cached emails',
+          {
+            count: cachedEmails.length,
+          }
+        );
+        return { emails: cachedEmails };
+      }
+
       const maxResults = params.maxResults ?? 15;
       const q = params.q ?? 'is:unread newer_than:2d';
       const started = Date.now();
@@ -87,6 +104,7 @@ export async function summarizeEmails(params: {
           count: emails.length,
         })
       );
+      cachedEmails = emails;
       return { emails };
     },
   });
@@ -94,7 +112,7 @@ export async function summarizeEmails(params: {
   // Final answer tool - the model calls this to submit the summary
   const submitSummary = tool({
     description:
-      'Submit the final email summary. Call this AFTER you have fetched and analyzed the emails using getUnreadEmails. This is how you provide your final answer.',
+      'Submit the final email summary. Call this AFTER you have fetched and analyzed the emails using getUnreadEmails. This is how you provide your final answer. YOU MUST CALL THIS TOOL.',
     inputSchema: SummarySchema,
     execute: async (
       summary: CallSummary
@@ -116,6 +134,8 @@ WORKFLOW:
 2. Analyze the results
 3. Call submitSummary with your complete summary
 
+CRITICAL: You MUST call submitSummary to complete the task. Do not just respond with text.
+
 RULES:
 - Base all outputs only on tool results and never invent content.
 - "speakable" must be under 120 seconds; if unreadCount is 0, keep it under 10 seconds and upbeat.
@@ -126,36 +146,89 @@ RULES:
 - Do not invent senders or subjects not present in tool results.
 `.trim();
 
-  const { steps } = await generateText({
-    model: google('gemini-2.0-flash'),
-    tools: { getUnreadEmails, submitSummary },
-    stopWhen: hasToolCall('submitSummary'),
-    system,
-    prompt: 'Summarize the current unread Gmail inbox',
-  });
+  const tools = { getUnreadEmails, submitSummary };
 
-  // Extract the summary from the submitSummary tool call
-  for (const step of steps) {
-    for (const toolCall of step.toolCalls) {
-      if (toolCall.toolName === 'submitSummary') {
-        const summary = (toolCall as { input: CallSummary }).input;
-        console.log(
-          '[summarize] summary generated',
-          JSON.stringify({
-            unreadCount: summary.unreadCount,
-            important: summary.important.length,
-            quickHits: summary.quickHits.length,
-          })
-        );
-        return summary;
+  // Helper to extract summary from steps
+  const extractSummaryFromSteps = (
+    steps: Awaited<ReturnType<typeof generateText>>['steps']
+  ): CallSummary | null => {
+    for (const step of steps) {
+      for (const toolCall of step.toolCalls) {
+        if (toolCall.toolName === 'submitSummary') {
+          return (toolCall as { input: CallSummary }).input;
+        }
       }
     }
+    return null;
+  };
+
+  // Attempt with retries
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    console.log(`[summarize] attempt ${attempt}/${MAX_ATTEMPTS}`);
+
+    const isRetry = attempt > 1;
+
+    // First attempt: Stop when submitSummary is called
+    // Retry attempt: Force submitSummary and limit steps
+    const { steps } = await generateText({
+      model: google('gemini-2.0-flash'),
+      tools,
+      stopWhen: isRetry
+        ? stepCountIs(MAX_STEPS_PER_ATTEMPT)
+        : hasToolCall('submitSummary'),
+      // On retry, force the model to call submitSummary
+      ...(isRetry && {
+        toolChoice: {
+          type: 'tool' as const,
+          toolName: 'submitSummary',
+        },
+      }),
+      system,
+      prompt: isRetry
+        ? 'You already have the email data. Now call submitSummary with your complete summary. This is required.'
+        : 'Summarize the current unread Gmail inbox',
+    });
+
+    // Log step details for debugging
+    console.log(
+      `[summarize] attempt ${attempt} completed`,
+      JSON.stringify({
+        stepCount: steps.length,
+        toolCalls: steps.flatMap((s) =>
+          s.toolCalls.map((tc) => tc.toolName)
+        ),
+      })
+    );
+
+    const summary = extractSummaryFromSteps(steps);
+    if (summary) {
+      console.log(
+        '[summarize] summary generated',
+        JSON.stringify({
+          attempt,
+          unreadCount: summary.unreadCount,
+          important: summary.important.length,
+          quickHits: summary.quickHits.length,
+        })
+      );
+      return summary;
+    }
+
+    console.warn(
+      `[summarize] attempt ${attempt} did not call submitSummary, steps:`,
+      JSON.stringify(
+        steps.map((s) => ({
+          toolCalls: s.toolCalls.map((tc) => tc.toolName),
+          text: s.text?.substring(0, 200),
+        })),
+        null,
+        2
+      )
+    );
   }
 
-  // Fallback: If submitSummary was never called, throw an error
-  console.error(
-    '[summarize] submitSummary was never called, steps:',
-    JSON.stringify(steps, null, 2)
+  // All attempts failed
+  throw new Error(
+    `Model did not call submitSummary tool after ${MAX_ATTEMPTS} attempts`
   );
-  throw new Error('Model did not call submitSummary tool');
 }

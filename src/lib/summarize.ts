@@ -90,22 +90,30 @@ export async function summarizeEmails(params: {
         '[summarize] getUnreadEmails: start',
         JSON.stringify({ maxResults, q })
       );
-      const emails = await fetchUnreadEmails({
-        clientId: params.gmailClientId,
-        clientSecret: params.gmailClientSecret,
-        refreshToken: params.gmailRefreshToken,
-        maxResults,
-        q,
-      });
-      console.log(
-        '[summarize] getUnreadEmails: done',
-        JSON.stringify({
-          elapsedMs: Date.now() - started,
-          count: emails.length,
-        })
-      );
-      cachedEmails = emails;
-      return { emails };
+      try {
+        const emails = await fetchUnreadEmails({
+          clientId: params.gmailClientId,
+          clientSecret: params.gmailClientSecret,
+          refreshToken: params.gmailRefreshToken,
+          maxResults,
+          q,
+        });
+        console.log(
+          '[summarize] getUnreadEmails: done',
+          JSON.stringify({
+            elapsedMs: Date.now() - started,
+            count: emails.length,
+          })
+        );
+        cachedEmails = emails;
+        return { emails };
+      } catch (error) {
+        console.error(
+          '[summarize] getUnreadEmails: ERROR',
+          error instanceof Error ? error.message : error
+        );
+        throw error;
+      }
     },
   });
 

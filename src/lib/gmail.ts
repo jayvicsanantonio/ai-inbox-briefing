@@ -33,6 +33,14 @@ export async function fetchUnreadEmails(params: {
   );
   oauth2.setCredentials({ refresh_token: params.refreshToken });
 
+  // The googleapis library handles token refreshment automatically.
+  // We can listen for the 'tokens' event to see if a refresh occurred.
+  oauth2.on('tokens', (tokens) => {
+    if (tokens.access_token) {
+      console.log('[gmail] Access token refreshed');
+    }
+  });
+
   const gmail = google.gmail({ version: 'v1', auth: oauth2 });
 
   const list = await gmail.users.messages.list({

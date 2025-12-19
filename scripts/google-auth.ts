@@ -39,11 +39,24 @@ app.get('/auth/callback', async (req: Request, res: Response) => {
     const { tokens } = await oAuthClient.getToken(code);
 
     if (tokens.refresh_token) {
-      console.log('\nYour REFRESH TOKEN (save this somewhere safe):');
+      console.log('\n✅ SUCCESS! Your permanent REFRESH TOKEN:');
+      console.log('-------------------------------------------');
       console.log(tokens.refresh_token);
+      console.log('-------------------------------------------');
+      console.log('\nNext Steps:');
+      console.log('1. Copy this token.');
+      console.log(
+        '2. Replace the value of GMAIL_REFRESH_TOKEN in your .env file.'
+      );
+      console.log(
+        '3. Since your app is now in "Production" mode (see GCP console), this token will NOT expire until you manually revoke access.'
+      );
     } else {
       console.log(
-        '\nNo refresh_token returned. Try again with prompt=consent and access_type=offline.'
+        '\n⚠️ No refresh_token returned. This usually happens if you were already logged in.'
+      );
+      console.log(
+        'Try again after revoking access here: https://myaccount.google.com/permissions'
       );
     }
 
